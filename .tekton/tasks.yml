@@ -5,36 +5,7 @@ metadata:
 spec:
   workspaces:
     - name: source
-  params:
-    - name: lintargs
-      description: Arguments to pass to ESLint
-      type: string
-      default: "src/ tests/ --ext *.js"
-    - name: jestargs
-      description: Arguments to pass to jest
-      type: string
-      default: "-v"
   steps:
-    - name: lint
-      image: node:20-alpine
-      workingDir: $(workspace.source.path)
-      script: |
-        #!/bin/sh
-        set -e
-        echo "Installing dependencies..."
-        npm ci
-        echo "Running ESLint..."
-        npm run lint $(params.lintargs)
-    - name: jest
-      image: node:20-alpine
-      workingDir: $(workspace.source.path)
-      script: |
-        #!/bin/sh
-        set -e
-        echo "Installing dependencies..."
-        npm ci
-        echo "Running Jest tests..."
-        npm test $(params.jestargs)
     - name: remove
       image: alpine:3
       env:
@@ -59,3 +30,51 @@ spec:
           # Delete files and directories starting with .. plus any other character
           rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
         fi
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: eslint
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: lintargs
+      description: Arguments to pass to ESLint
+      type: string
+      default: "src/ tests/ --ext *.js"
+  steps:
+    - name: lint
+      image: node:20-alpine
+      workingDir: $(workspace.source.path)
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Installing dependencies..."
+        npm ci
+        echo "Running ESLint..."
+        npm run lint $(params.lintargs)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: jest
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: jestargs
+      description: Arguments to pass to jest
+      type: string
+      default: "-v"
+  steps:
+    - name: jest
+      image: node:20-alpine
+      workingDir: $(workspace.source.path)
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Installing dependencies..."
+        npm ci
+        echo "Running Jest tests..."
+        npm test $(params.jestargs)
